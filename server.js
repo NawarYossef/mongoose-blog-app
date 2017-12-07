@@ -1,28 +1,102 @@
 const express = require("express")
 const bodyParser = require('body-parser');
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
+var Schema = mongoose.Schema;
+const morgan = require("morgan");
+const {Blog} = require("./models");
+const app = express();
+const {PORT, DATABASE_URL} = require("./config")
 
-mongoose.connect('mongodb://localhost/', { useMongoClient: true });
+app.use(bodyParser.json());
+app.use(morgan('common'));
 
-const BlogPost = require("./models")
-
+mongoose.connect(DATABASE_URL, { useMongoClient: true });
 mongoose.Promise = global.Promise;
 
-const app = express()
-app.use(bodyParser.json())
+let server;
+
+function runServer(port=PORT, database_url=DATABASE_URL) {
+  mongoose.connect(DATABASE_URL, { useMongoClient: true })
+  server = app.listen(port, () => {
+    console.log(`Your app is listening on port ${port}`);
+  }).on("error", err => {
+    mongoose.disconnect()
+  }) 
+}
+
+runServer()
+
+
+app.get('/posts/:id', (req, res) => {
+  Blog
+    .findById(req.params.id)
+    .then(blog => res.json({blog: blog.serialize()}))
+    .catch(err => {
+      console.error(err);
+      res.status(500).json({ message: 'Internal server error' });
+    });
+});
 
 
 app.get("/posts", (req, res) => {
-  BlogPost
+  Blog
   .find()
-  .then(Post => res.json(Post.apiRepr()))
-  .catch(err => res.status(400).json("sorry"))
+  .then(posts => {
+    res.json({
+      posts: posts.map(
+        (post) =>  post.serialize())
+    })
+  })
+  .catch(err => res.send(err))
 })
 
-const port = process.env.PORT || 8080
 
-app.listen(port, () => {
-  console.log(`Your app is listening on port ${port}`);
-});
+
+app.post("/posts", (req, res) => {
+  requiredFields = [title, author, content]
+  requiredFields.forEach(field => {
+    if (!(field in req.body)) {
+      const message = `Missing \`${field}\` in request body`;
+      console.error(message)
+      res.status(400).send(message)
+    }
+  });
+  Blog
+  .Create({
+    title: req.body.title,
+    author: req.body.author,
+    content: req.body.content
+  })
+  .then(post =>   res.status(201).json(post.serialize()))
+  .catch(err => res.status(500).send(err))
+})
+
+
+
+app.put("/posts/:id", (req, res) => {
+  if(!(req.params.id && res.body.id && req.params.id === res.body.id)) {
+    const message = (
+      `Request path id (${req.params.id}) and request body id ` +
+      `(${req.body.id}) must match`);
+    console.error(message);
+    return res.status(400).json({ message: message });
+  }
+  const toUpdate = {}
+  requiredFields = [title, author, content]
+
+  requiredFields.forEach(field => {
+    if (field in req.body) {
+      toUpdate[field] = req.body.field
+    }
+  })
+
+  Restaurant
+  .findByIdAndUpdate(req.params.id, { $set: toUpdate })
+  .then(restaurant => res.status(204).end())
+  .catch(err => res.status(500).json({ message: 'Internal server error' }));
+})
+
+
+
 
 

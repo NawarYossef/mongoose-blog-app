@@ -1,7 +1,7 @@
 
 const mongoose = require('mongoose');
 
-const blogPostSchema = new mongoose.Schema({
+const blogSchema = new mongoose.Schema({
   title: {type: String, required: true},
   content: {type: String, required: true},
   author: {
@@ -10,19 +10,19 @@ const blogPostSchema = new mongoose.Schema({
   }
 })
 
-blogPostSchema.virtual('fullName').get(function() {
+blogSchema.virtual('fullName').get(function() {
   return this.author.firstName + ' ' + this.author.lastName;
 })
 
-blogPostSchema.methods.apiRepr = function() {
+blogSchema.methods.serialize = function() {
   return {
     id: this._id,
     title: this.title,
-    fullName: this.fullName,
+    author: this.fullName,
     content: this.content
   }
 }
 
-const BlogPost = mongoose.model('BlogPost', blogPostSchema);
+const Blog = mongoose.model('Blog', blogSchema);
 
-module.exports = {BlogPost}
+module.exports = {Blog}
