@@ -52,25 +52,30 @@ app.get("/posts", (req, res) => {
 
 
 
-app.post("/posts", (req, res) => {
-  requiredFields = [title, author, content]
-  requiredFields.forEach(field => {
+app.post('/posts', (req, res) => {
+  const requiredFields = ['title', 'content', 'author'];
+  for (let i = 0; i < requiredFields.length; i++) {
+    const field = requiredFields[i];
     if (!(field in req.body)) {
       const message = `Missing \`${field}\` in request body`;
-      console.error(message)
-      res.status(400).send(message)
+      console.error(message);
+      return res.status(400).send(message);
     }
-  });
-  Blog
-  .Create({
-    title: req.body.title,
-    author: req.body.author,
-    content: req.body.content
-  })
-  .then(post =>   res.status(201).json(post.serialize()))
-  .catch(err => res.status(500).send(err))
-})
+  }
 
+  Blog
+    .create({
+      title: req.body.title,
+      content: req.body.content,
+      author: req.body.author
+    })
+    .then(blogPost => res.status(201).json(blogPost.serialize()))
+    .catch(err => {
+      console.error(err);
+      res.status(500).json({ error: 'Something went wrong' });
+    });
+
+});
 
 
 app.put("/posts/:id", (req, res) => {
@@ -90,13 +95,23 @@ app.put("/posts/:id", (req, res) => {
     }
   })
 
-  Restaurant
+  Blog
   .findByIdAndUpdate(req.params.id, { $set: toUpdate })
   .then(restaurant => res.status(204).end())
   .catch(err => res.status(500).json({ message: 'Internal server error' }));
 })
 
 
+app.delete("/posts/:id", (req, res) => {
+  Blog
+  .findByIdAndRemove(req.params.id)
+  .then(blog => res.json(blog))
+  .catch(err => res.status(500).json({ message: 'Internal server error' }));
+})
 
+
+app.use('*', function (req, res) {
+  res.status(404).json({ message: 'Not Found' });
+});
 
 

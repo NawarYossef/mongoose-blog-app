@@ -2,12 +2,12 @@
 const mongoose = require('mongoose');
 
 const blogSchema = new mongoose.Schema({
-  title: {type: String, required: true},
-  content: {type: String, required: true},
   author: {
     firstName: String,
     lastName: String
-  }
+  },
+  title: {type: String, required: true},
+  content: {type: String, required: true}
 })
 
 blogSchema.virtual('fullName').get(function() {
